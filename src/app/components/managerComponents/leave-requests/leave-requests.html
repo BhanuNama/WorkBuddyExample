@@ -1,0 +1,181 @@
+<div class="min-vh-100 py-4">
+  <!-- Main Content -->
+  <div class="container-fluid">
+    <div class="card shadow-sm mx-auto">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="fw-bold mb-0">Leave Requests for Approval</h4>
+          <div class="d-flex gap-2 align-items-center">
+            <input 
+              type="text" 
+              class="form-control form-control-sm" 
+              placeholder="Search"
+              [(ngModel)]="searchValue"
+              (keyup.enter)="onSearch()"
+              style="width: 200px;">
+            <select 
+              class="form-select form-select-sm" 
+              [(ngModel)]="statusFilter"
+              (change)="onStatusFilterChange()"
+              style="width: 140px;">
+              <option value="">Filter by Status: All</option>
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+            <button class="btn btn-sm btn-outline-danger" (click)="logout()">
+              <i class="bi bi-box-arrow-right"></i> Logout
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="isLoading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-3 text-muted">Loading leave requests...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!isLoading && filteredRequests.length === 0" class="text-center py-5">
+          <i class="bi bi-inbox fs-1 text-muted"></i>
+          <p class="mt-3 text-muted">No leave requests found</p>
+        </div>
+
+        <!-- Table -->
+        <div *ngIf="!isLoading && filteredRequests.length > 0" class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-primary">
+              <tr>
+                <th>Employee Name</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Reason</th>
+                <th>
+                  <span class="d-flex align-items-center gap-1" style="cursor: pointer;" (click)="toggleSort()">
+                    Created On
+                    <span *ngIf="sortValue === 'asc'"><i class="bi bi-arrow-up"></i></span>
+                    <span *ngIf="sortValue === 'desc'"><i class="bi bi-arrow-down"></i></span>
+                  </span>
+                </th>
+                <th>Status</th>
+                <th class="text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let leave of filteredRequests">
+                <td>{{getUserName(leave.userId) || 'N/A'}}</td>
+                <td>{{formatDate(leave.startDate)}}</td>
+                <td>{{formatDate(leave.endDate)}}</td>
+                <td>{{leave.reason || 'N/A'}}</td>
+                <td>{{formatDate(leave.createdOn)}}</td>
+                <td>
+                  <span class="badge" [ngClass]="getStatusBadgeClass(leave.status)">
+                    {{leave.status}}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <button 
+                    class="btn btn-sm btn-info text-white me-1"
+                    (click)="showMore(leave)">
+                    Show More
+                  </button>
+                  <button 
+                    class="btn btn-sm btn-success me-1"
+                    (click)="approveLeve(leave._id)"
+                    [disabled]="leave.status !== 'Pending'">
+                    Approve
+                  </button>
+                  <button 
+                    class="btn btn-sm btn-danger"
+                    (click)="rejectLeave(leave._id)"
+                    [disabled]="leave.status !== 'Pending'">
+                    Reject
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Pagination -->
+          <div class="d-flex justify-content-center align-items-center mt-3">
+            <button 
+              class="btn btn-primary btn-sm me-2"
+              (click)="previousPage()"
+              [disabled]="page === 1">
+              Prev
+            </button>
+            <span class="mx-3 small">Page {{page}} of {{totalPages}}</span>
+            <button 
+              class="btn btn-primary btn-sm ms-2"
+              (click)="nextPage()"
+              [disabled]="page === totalPages">
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title" id="detailsModalLabel">Additional Details</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" (click)="closeDetailsModal()"></button>
+      </div>
+      <div class="modal-body" *ngIf="selectedLeaveDetails">
+        <div class="small">
+          <p class="mb-2"><strong>Employee Name:</strong> {{selectedEmployee?.userName || (selectedLeaveDetails.userId?.userName || 'N/A')}}</p>
+          <p class="mb-2"><strong>Mail:</strong> {{selectedEmployee?.email || (selectedLeaveDetails.userId?.email || 'N/A')}}</p>
+          <p class="mb-2"><strong>Mobile:</strong> {{selectedEmployee?.mobile || (selectedLeaveDetails.userId?.mobile || 'N/A')}}</p>
+          <p class="mb-2"><strong>Role:</strong> {{selectedEmployee?.role || (selectedLeaveDetails.userId?.role || 'N/A')}}</p>
+          <p class="mb-2"><strong>Start:</strong> {{formatDate(selectedLeaveDetails.startDate)}}</p>
+          <p class="mb-2"><strong>End:</strong> {{formatDate(selectedLeaveDetails.endDate)}}</p>
+          <p class="mb-2"><strong>Reason:</strong> {{selectedLeaveDetails.reason || 'N/A'}}</p>
+          <p class="mb-2"><strong>Leave Type:</strong> {{selectedLeaveDetails.leaveType || 'N/A'}}</p>
+          <p class="mb-2"><strong>Proof(File Preview):</strong></p>
+          <div class="border rounded p-2 bg-light text-center" *ngIf="selectedLeaveDetails.file && !imageError; else noFileOrError">
+            <img [src]="selectedLeaveDetails.file" 
+                 alt="Proof" 
+                 class="img-fluid rounded" 
+                 style="max-height: 250px; max-width: 100%;"
+                 (error)="onImageError()">
+          </div>
+          <ng-template #noFileOrError>
+            <div class="border rounded p-2 bg-light text-center">
+              <p class="text-muted mb-0">{{imageError ? 'Image not available' : 'No file uploaded'}}</p>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" (click)="closeDetailsModal()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Success Toast -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Error Toast -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  <div id="errorToast" class="toast align-items-center text-white bg-danger border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>

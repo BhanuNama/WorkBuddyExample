@@ -1,0 +1,81 @@
+<div class="min-vh-100 d-flex align-items-center">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-body p-4">
+            <h4 class="text-center mb-3 fw-bold">WorkBuddy Login</h4>
+            
+            <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+              {{ errorMessage }}
+              <button type="button" class="btn-close" (click)="errorMessage = ''" aria-label="Close"></button>
+            </div>
+            
+            <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+              {{ successMessage }}
+              <button type="button" class="btn-close" (click)="successMessage = ''" aria-label="Close"></button>
+            </div>
+
+            <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+              <div class="mb-3">
+                <label for="email" class="form-label fw-semibold">Email address</label>
+                <input 
+                  type="email" 
+                  class="form-control" 
+                  id="email" 
+                  name="email"
+                  [(ngModel)]="loginData.email" 
+                  required 
+                  email
+                  placeholder="Enter your email"
+                  #email="ngModel">
+                <div *ngIf="email.invalid && email.touched" class="text-danger small mt-1">
+                  <div *ngIf="email.errors?.['required']">Email is required</div>
+                  <div *ngIf="email.errors?.['email']">Please enter a valid email</div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="password" class="form-label fw-semibold">Password</label>
+                <input 
+                  type="password" 
+                  class="form-control" 
+                  id="password" 
+                  name="password"
+                  [(ngModel)]="loginData.password" 
+                  required
+                  minlength="6"
+                  placeholder="Enter your password"
+                  #password="ngModel">
+                <div *ngIf="password.invalid && password.touched" class="text-danger small mt-1">
+                  <div *ngIf="password.errors?.['required']">Password is required</div>
+                  <div *ngIf="password.errors?.['minlength']">Password must be at least 6 characters</div>
+                </div>
+              </div>
+
+              <div class="d-grid mb-3">
+                <button 
+                  type="submit" 
+                  class="btn btn-primary" 
+                  [disabled]="loginForm.invalid || isLoading">
+                  <span *ngIf="!isLoading">Login</span>
+                  <span *ngIf="isLoading">
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Logging in...
+                  </span>
+                </button>
+              </div>
+
+              <div class="text-center">
+                <p class="mb-0 small">Don't have an account? 
+                  <a routerLink="/signup" class="text-decoration-none">Sign up here</a>
+                </p>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

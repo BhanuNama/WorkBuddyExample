@@ -1,0 +1,148 @@
+<div class="min-vh-100 d-flex align-items-center py-4">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-body p-4">
+            <h4 class="text-center mb-3 fw-bold">Create Account</h4>
+            
+            <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+              {{ errorMessage }}
+              <button type="button" class="btn-close" (click)="errorMessage = ''" aria-label="Close"></button>
+            </div>
+            
+            <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+              {{ successMessage }}
+              <button type="button" class="btn-close" (click)="successMessage = ''" aria-label="Close"></button>
+            </div>
+
+            <form (ngSubmit)="onSubmit()" #signupForm="ngForm">
+              <div class="mb-3">
+                <label for="userName" class="form-label fw-semibold">Username</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="userName" 
+                  name="userName"
+                  [(ngModel)]="signupData.userName" 
+                  required 
+                  minlength="3"
+                  placeholder="Enter your username"
+                  #userName="ngModel">
+                <div *ngIf="userName.invalid && userName.touched" class="text-danger small mt-1">
+                  <div *ngIf="userName.errors?.['required']">Username is required</div>
+                  <div *ngIf="userName.errors?.['minlength']">Username must be at least 3 characters</div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="email" class="form-label fw-semibold">Email address</label>
+                <input 
+                  type="email" 
+                  class="form-control" 
+                  id="email" 
+                  name="email"
+                  [(ngModel)]="signupData.email" 
+                  required 
+                  email
+                  placeholder="Enter your email"
+                  #email="ngModel">
+                <div *ngIf="email.invalid && email.touched" class="text-danger small mt-1">
+                  <div *ngIf="email.errors?.['required']">Email is required</div>
+                  <div *ngIf="email.errors?.['email']">Please enter a valid email</div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="mobile" class="form-label fw-semibold">Mobile Number</label>
+                <input 
+                  type="tel" 
+                  class="form-control" 
+                  id="mobile" 
+                  name="mobile"
+                  [(ngModel)]="signupData.mobile" 
+                  required 
+                  pattern="[0-9]{10}"
+                  placeholder="Enter your mobile number"
+                  #mobile="ngModel">
+                <div *ngIf="mobile.invalid && mobile.touched" class="text-danger small mt-1">
+                  <div *ngIf="mobile.errors?.['required']">Mobile number is required</div>
+                  <div *ngIf="mobile.errors?.['pattern']">Please enter a valid 10-digit mobile number</div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="role" class="form-label fw-semibold">Role</label>
+                <select 
+                  class="form-select" 
+                  id="role" 
+                  name="role"
+                  [(ngModel)]="signupData.role" 
+                  required
+                  #role="ngModel">
+                  <option value="employee">Employee</option>
+                  <option value="manager">Manager</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="password" class="form-label fw-semibold">Password</label>
+                <input 
+                  type="password" 
+                  class="form-control" 
+                  id="password" 
+                  name="password"
+                  [(ngModel)]="signupData.password" 
+                  required
+                  minlength="6"
+                  placeholder="Enter your password"
+                  #password="ngModel">
+                <div *ngIf="password.invalid && password.touched" class="text-danger small mt-1">
+                  <div *ngIf="password.errors?.['required']">Password is required</div>
+                  <div *ngIf="password.errors?.['minlength']">Password must be at least 6 characters</div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="confirmPassword" class="form-label fw-semibold">Confirm Password</label>
+                <input 
+                  type="password" 
+                  class="form-control" 
+                  id="confirmPassword" 
+                  name="confirmPassword"
+                  [(ngModel)]="confirmPassword" 
+                  required
+                  minlength="6"
+                  placeholder="Confirm your password"
+                  #confirmPasswordField="ngModel">
+                <div *ngIf="confirmPasswordField.invalid && confirmPasswordField.touched" class="text-danger small mt-1">
+                  <div *ngIf="confirmPasswordField.errors?.['required']">Please confirm your password</div>
+                </div>
+              </div>
+
+              <div class="d-grid mb-3">
+                <button 
+                  type="submit" 
+                  class="btn btn-primary" 
+                  [disabled]="signupForm.invalid || isLoading">
+                  <span *ngIf="!isLoading">Sign Up</span>
+                  <span *ngIf="isLoading">
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Creating account...
+                  </span>
+                </button>
+              </div>
+
+              <div class="text-center">
+                <p class="mb-0 small">Already have an account? 
+                  <a routerLink="/login" class="text-decoration-none">Login here</a>
+                </p>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
