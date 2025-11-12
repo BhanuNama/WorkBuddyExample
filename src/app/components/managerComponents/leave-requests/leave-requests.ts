@@ -6,6 +6,7 @@ import { LeaveService } from '../../../services/leave.service';
 import { UserService } from '../../../services/user.service';
 import { AuthService } from '../../../services/auth.service';
 import { LeaveRequest } from '../../../models/leave-request.model';
+import { ToastrService } from 'ngx-toastr';
 
 declare var bootstrap: any;
 declare var window: any;
@@ -37,7 +38,8 @@ export class LeaveRequests implements OnInit {
     private leaveService: LeaveService,
     private userService: UserService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private toastr: ToastrService
   ) {}
 
   ngOnInit() {
@@ -86,7 +88,7 @@ export class LeaveRequests implements OnInit {
       },
       error: (error) => {
         this.isLoading = false;
-        this.showErrorToast('Failed to load leave requests');
+        this.toastr.error('Failed to load leave requests');
       }
     });
   }
@@ -167,11 +169,11 @@ export class LeaveRequests implements OnInit {
   updateStatus(leaveId: string, status: string) {
     this.leaveService.updateLeaveRequest(leaveId, { status }).subscribe({
       next: (response) => {
-        this.showSuccessToast(`Leave request ${status.toLowerCase()} successfully`);
+        this.toastr.success(`Leave request ${status.toLowerCase()} successfully`);
         this.loadLeaveRequests();
       },
       error: (error) => {
-        this.showErrorToast(`Failed to ${status.toLowerCase()} leave request`);
+        this.toastr.error(`Failed to ${status.toLowerCase()} leave request`);
       }
     });
   }
@@ -195,26 +197,6 @@ export class LeaveRequests implements OnInit {
     if (this.page < this.totalPages) {
       this.page++;
       this.loadLeaveRequests();
-    }
-  }
-
-  showSuccessToast(message: string) {
-    const toastEl = document.getElementById('successToast');
-    if (toastEl) {
-      const messageEl = toastEl.querySelector('.toast-body');
-      if (messageEl) messageEl.textContent = message;
-      const toast = new bootstrap.Toast(toastEl);
-      toast.show();
-    }
-  }
-
-  showErrorToast(message: string) {
-    const toastEl = document.getElementById('errorToast');
-    if (toastEl) {
-      const messageEl = toastEl.querySelector('.toast-body');
-      if (messageEl) messageEl.textContent = message;
-      const toast = new bootstrap.Toast(toastEl);
-      toast.show();
     }
   }
 

@@ -12,94 +12,72 @@
               </button>
             </div>
 
-            <form (ngSubmit)="onSubmit()" #leaveRequestForm="ngForm">
+            <form [formGroup]="leaveForm" (ngSubmit)="onSubmit()">
               <!-- Start Date -->
-              <div class="mb-3">
-                <label for="startDate" class="form-label fw-semibold">Start Date <span class="text-danger">*</span></label>
-                <input 
-                  type="date" 
-                  class="form-control" 
-                  id="startDate"
-                  name="startDate"
-                  [(ngModel)]="leaveForm.startDate"
-                  [class.is-invalid]="errors.startDate"
-                  required>
-                <div class="invalid-feedback" *ngIf="errors.startDate">
-                  {{errors.startDate}}
-                </div>
-              </div>
+              <mat-form-field appearance="outline" class="w-100 mb-3">
+                <mat-label>Start Date</mat-label>
+                <input matInput [matDatepicker]="picker1" formControlName="startDate" [matDatepickerFilter]="startDateFilter">
+                <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+                <mat-datepicker #picker1></mat-datepicker>
+                <mat-error *ngIf="leaveForm.get('startDate')?.hasError('required')">
+                  Start Date is required
+                </mat-error>
+              </mat-form-field>
 
               <!-- End Date -->
-              <div class="mb-3">
-                <label for="endDate" class="form-label fw-semibold">End Date <span class="text-danger">*</span></label>
-                <input 
-                  type="date" 
-                  class="form-control" 
-                  id="endDate"
-                  name="endDate"
-                  [(ngModel)]="leaveForm.endDate"
-                  [class.is-invalid]="errors.endDate"
-                  required>
-                <div class="invalid-feedback" *ngIf="errors.endDate">
-                  {{errors.endDate}}
-                </div>
-              </div>
+              <mat-form-field appearance="outline" class="w-100 mb-3">
+                <mat-label>End Date</mat-label>
+                <input matInput [matDatepicker]="picker2" formControlName="endDate" [matDatepickerFilter]="endDateFilter">
+                <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+                <mat-datepicker #picker2></mat-datepicker>
+                <mat-error *ngIf="leaveForm.get('endDate')?.hasError('required')">
+                  End Date is required
+                </mat-error>
+                <mat-error *ngIf="leaveForm.get('endDate')?.hasError('invalidEndDate')">
+                  End Date must be after Start Date
+                </mat-error>
+              </mat-form-field>
 
               <!-- Reason -->
-              <div class="mb-3">
-                <label for="reason" class="form-label fw-semibold">Reason <span class="text-danger">*</span></label>
-                <textarea 
-                  class="form-control" 
-                  id="reason"
-                  name="reason"
-                  rows="3"
-                  [(ngModel)]="leaveForm.reason"
-                  [class.is-invalid]="errors.reason"
-                  placeholder="Enter reason for leave"
-                  required></textarea>
-                <div class="invalid-feedback" *ngIf="errors.reason">
-                  {{errors.reason}}
-                </div>
-              </div>
+              <mat-form-field appearance="outline" class="w-100 mb-3">
+                <mat-label>Reason</mat-label>
+                <textarea matInput formControlName="reason" rows="3" placeholder="Enter reason for leave"></textarea>
+                <mat-error *ngIf="leaveForm.get('reason')?.hasError('required')">
+                  Reason is required
+                </mat-error>
+              </mat-form-field>
 
               <!-- Leave Type -->
-              <div class="mb-3">
-                <label for="leaveType" class="form-label fw-semibold">Leave Type <span class="text-danger">*</span></label>
-                <select 
-                  class="form-select" 
-                  id="leaveType"
-                  name="leaveType"
-                  [(ngModel)]="leaveForm.leaveType"
-                  [class.is-invalid]="errors.leaveType"
-                  required>
-                  <option value="" selected disabled>Select Type</option>
-                  <option *ngFor="let type of leaveTypes" [value]="type">{{type}}</option>
-                </select>
-                <div class="invalid-feedback" *ngIf="errors.leaveType">
-                  {{errors.leaveType}}
-                </div>
-              </div>
+              <mat-form-field appearance="outline" class="w-100 mb-3">
+                <mat-label>Leave Type</mat-label>
+                <mat-select formControlName="leaveType">
+                  <mat-option value="">Select Type</mat-option>
+                  <mat-option *ngFor="let type of leaveTypes" [value]="type">{{type}}</mat-option>
+                </mat-select>
+                <mat-error *ngIf="leaveForm.get('leaveType')?.hasError('required')">
+                  Leave Type is required
+                </mat-error>
+              </mat-form-field>
 
               <!-- Attachment -->
               <div class="mb-3">
-                <label for="fileInput" class="form-label fw-semibold">Attachment <span class="text-danger">*</span></label>
+                <label for="fileInput" class="form-label fw-semibold mb-2">Attachment <span class="text-danger">*</span></label>
                 <input 
                   type="file" 
                   class="form-control" 
                   id="fileInput"
                   (change)="onFileSelected($event)"
-                  [class.is-invalid]="errors.file"
                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-                <div class="invalid-feedback" *ngIf="errors.file">
-                  {{errors.file}}
-                </div>
+                <mat-error *ngIf="leaveForm.get('file')?.hasError('required') && leaveForm.get('file')?.touched">
+                  File is required
+                </mat-error>
                 <!-- Image Preview -->
-                <div class="mt-2" *ngIf="leaveForm.file && (isImageFile(selectedFile) || isImagePreview)">
+                <div class="mt-2" *ngIf="leaveForm.get('file')?.value && (isImageFile(selectedFile) || isImagePreview)">
                   <small class="text-muted d-block mb-2">
                     <i class="bi bi-image"></i> Preview:
                   </small>
                   <div class="border rounded p-2 bg-light d-inline-block">
-                    <img [src]="leaveForm.file" 
+                    <img [src]="leaveForm.get('file')?.value" 
                          alt="Preview" 
                          class="img-thumbnail" 
                          style="max-width: 200px; max-height: 200px; object-fit: contain;">
@@ -110,17 +88,19 @@
                   <i class="bi bi-file-earmark"></i> 
                   {{selectedFileName}}
                 </small>
-                <small class="text-muted d-block mt-1" *ngIf="leaveForm.file && !selectedFile && !isImagePreview">
+                <small class="text-muted d-block mt-1" *ngIf="leaveForm.get('file')?.value && !selectedFile && !isImagePreview">
                   <i class="bi bi-file-earmark"></i> File attached
                 </small>
               </div>
 
               <!-- Submit Button -->
-              <div class="d-grid">
+              <div class="d-grid mt-3">
                 <button 
+                  mat-raised-button 
+                  color="primary"
                   type="submit" 
-                  class="btn btn-primary"
-                  [disabled]="isLoading">
+                  [disabled]="isLoading"
+                  class="w-100">
                   <span *ngIf="!isLoading">{{editMode ? 'Update Request' : 'Add Request'}}</span>
                   <span *ngIf="isLoading">
                     <span class="spinner-border spinner-border-sm me-2" role="status"></span>
@@ -132,26 +112,6 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- Success Toast -->
-<div class="toast-container position-fixed top-0 end-0 p-3">
-  <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert">
-    <div class="d-flex">
-      <div class="toast-body"></div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-    </div>
-  </div>
-</div>
-
-<!-- Error Toast -->
-<div class="toast-container position-fixed top-0 end-0 p-3">
-  <div id="errorToast" class="toast align-items-center text-white bg-danger border-0" role="alert">
-    <div class="d-flex">
-      <div class="toast-body"></div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
     </div>
   </div>
 </div>

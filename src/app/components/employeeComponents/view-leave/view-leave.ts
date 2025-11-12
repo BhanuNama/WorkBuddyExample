@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { LeaveService } from '../../../services/leave.service';
 import { AuthService } from '../../../services/auth.service';
 import { LeaveRequest } from '../../../models/leave-request.model';
+import { ToastrService } from 'ngx-toastr';
 
 declare var bootstrap: any;
 
@@ -33,7 +34,8 @@ export class ViewLeave implements OnInit {
   constructor(
     private leaveService: LeaveService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private toastr: ToastrService
   ) {}
 
   ngOnInit() {
@@ -57,7 +59,7 @@ export class ViewLeave implements OnInit {
       },
       error: (error) => {
         this.isLoading = false;
-        this.showErrorToast('Failed to load leave requests');
+        this.toastr.error('Failed to load leave requests');
       }
     });
   }
@@ -147,12 +149,12 @@ export class ViewLeave implements OnInit {
 
     this.leaveService.deleteLeaveRequest(this.deleteLeaveId).subscribe({
       next: (response) => {
-        this.showSuccessToast('Leave request deleted successfully');
+        this.toastr.success('Leave request deleted successfully');
         this.loadLeaveRequests();
         this.closeDeleteModal();
       },
       error: (error) => {
-        this.showErrorToast('Failed to delete leave request');
+        this.toastr.error('Failed to delete leave request');
       }
     });
   }
@@ -175,26 +177,6 @@ export class ViewLeave implements OnInit {
       }
     }
     this.deleteLeaveId = '';
-  }
-
-  showSuccessToast(message: string) {
-    const toastEl = document.getElementById('successToast');
-    if (toastEl) {
-      const messageEl = toastEl.querySelector('.toast-body');
-      if (messageEl) messageEl.textContent = message;
-      const toast = new bootstrap.Toast(toastEl);
-      toast.show();
-    }
-  }
-
-  showErrorToast(message: string) {
-    const toastEl = document.getElementById('errorToast');
-    if (toastEl) {
-      const messageEl = toastEl.querySelector('.toast-body');
-      if (messageEl) messageEl.textContent = message;
-      const toast = new bootstrap.Toast(toastEl);
-      toast.show();
-    }
   }
 
   goToApplyLeave() {
