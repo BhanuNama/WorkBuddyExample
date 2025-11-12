@@ -1,90 +1,14 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LeaveService } from '../../../services/leave.service';
 import { AuthService } from '../../../services/auth.service';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule, MAT_DATE_FORMATS, DateAdapter, NativeDateAdapter } from '@angular/material/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatSelectModule } from '@angular/material/select';
-import { provideNativeDateAdapter } from '@angular/material/core';
-import { Injectable } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
-
-// Custom DateAdapter for DD/MM/YYYY format
-@Injectable()
-export class CustomDateAdapter extends NativeDateAdapter {
-
-  override format(date: Date, displayFormat: Object): string {
-    if (displayFormat === 'input') {
-      const day = date.getDate();
-      const month = date.getMonth() + 1;
-      const year = date.getFullYear();
-      return `${this._to2digit(day)}/${this._to2digit(month)}/${year}`;
-    }
-    return date.toDateString();
-  }
-
-  override parse(value: any): Date | null {
-    if (typeof value === 'string' && value) {
-      // Parse DD/MM/YYYY format
-      const parts = value.split('/');
-      if (parts.length === 3) {
-        const day = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
-        const year = parseInt(parts[2], 10);
-        const date = new Date(year, month, day);
-        if (this.isValidDate(date)) {
-          return date;
-        }
-      }
-    }
-    return super.parse(value);
-  }
-
-  private isValidDate(date: Date): boolean {
-    return date instanceof Date && !isNaN(date.getTime());
-  }
-
-  private _to2digit(n: number): string {
-    return ('00' + n).slice(-2);
-  }
-}
-
-// Custom date format: DD/MM/YYYY
-export const DD_MM_YYYY_FORMAT = {
-  parse: {
-    dateInput: 'input',
-  },
-  display: {
-    dateInput: 'input',
-    monthYearLabel: 'MMM YYYY',
-    dateA11yLabel: 'LL',
-    monthYearA11yLabel: 'MMMM YYYY',
-  },
-};
 
 @Component({
   selector: 'app-leave-form',
-  imports: [
-    CommonModule, 
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
-    MatButtonModule,
-    MatSelectModule
-  ],
-  providers: [
-    { provide: DateAdapter, useClass: CustomDateAdapter },
-    { provide: MAT_DATE_FORMATS, useValue: DD_MM_YYYY_FORMAT }
-  ],
   templateUrl: './leave-form.html',
-  styleUrl: './leave-form.css',
+  styleUrls: ['./leave-form.css'],
 })
 export class LeaveForm implements OnInit {
   leaveForm!: FormGroup;
@@ -127,6 +51,7 @@ export class LeaveForm implements OnInit {
       const leaveData = navigation.leaveData;
       this.editMode = true;
       this.leaveId = leaveData._id;
+
       this.leaveForm.patchValue({
         userId: leaveData.userId,
         startDate: leaveData.startDate ? new Date(leaveData.startDate) : null,
@@ -135,10 +60,9 @@ export class LeaveForm implements OnInit {
         leaveType: leaveData.leaveType,
         file: leaveData.file
       });
-      // Set filename for edit mode if file exists
+      
       if (leaveData.file) {
         this.selectedFileName = 'File attached';
-        // Check if it's a base64 image (starts with data:image)
         this.isImagePreview = leaveData.file.startsWith('data:image');
       }
     }
@@ -153,32 +77,24 @@ export class LeaveForm implements OnInit {
     });
   }
 
-  // Date filter for start date - disable dates before today
+  // Simple date filter for start date - only allow today or future dates
   startDateFilter = (date: Date | null): boolean => {
     if (!date) return false;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const selectedDate = new Date(date);
-    selectedDate.setHours(0, 0, 0, 0);
-    return selectedDate >= today;
+    return date >= today;
   };
 
-  // Date filter for end date - disable dates before start date
+  // Simple date filter for end date - must be after start date
   endDateFilter = (date: Date | null): boolean => {
     if (!date) return false;
     const startDate = this.leaveForm.get('startDate')?.value;
     if (!startDate) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const selectedDate = new Date(date);
-      selectedDate.setHours(0, 0, 0, 0);
-      return selectedDate >= today;
+      return this.startDateFilter(date);
     }
     const minDate = new Date(startDate);
     minDate.setHours(0, 0, 0, 0);
-    const selectedDate = new Date(date);
-    selectedDate.setHours(0, 0, 0, 0);
-    return selectedDate >= minDate;
+    return date >= minDate;
   };
 
   onFileSelected(event: any) {
@@ -211,7 +127,7 @@ export class LeaveForm implements OnInit {
     const endDate = this.leaveForm.get('endDate')?.value;
 
     if (startDate && endDate) {
-      if (new Date(startDate) > new Date(endDate)) {
+      if (new Date(endDate) < new Date(startDate)) {
         this.leaveForm.get('endDate')?.setErrors({ invalidEndDate: true });
         return false;
       }
@@ -227,10 +143,20 @@ export class LeaveForm implements OnInit {
 
     this.isLoading = true;
     const formValue = this.leaveForm.value;
+    
+    // Convert Date objects to ISO string (Material datepicker returns Date objects)
+    const formatDate = (date: Date | string | null): string => {
+      if (!date) return '';
+      const dateObj = date instanceof Date ? date : new Date(date);
+      if (isNaN(dateObj.getTime())) return '';
+      dateObj.setHours(0, 0, 0, 0);
+      return dateObj.toISOString();
+    };
+    
     const requestData = {
       ...formValue,
-      startDate: formValue.startDate ? new Date(formValue.startDate).toISOString() : '',
-      endDate: formValue.endDate ? new Date(formValue.endDate).toISOString() : ''
+      startDate: formatDate(formValue.startDate),
+      endDate: formatDate(formValue.endDate)
     };
 
     if (this.editMode && this.leaveId) {
@@ -252,7 +178,9 @@ export class LeaveForm implements OnInit {
         next: (response) => {
           this.isLoading = false;
           this.toastr.success('Leave request submitted successfully!');
-          this.resetForm();
+          setTimeout(() => {
+            this.router.navigate(['/employee/view-leave']);
+          }, 1500);
         },
         error: (error) => {
           this.isLoading = false;
@@ -281,6 +209,7 @@ export class LeaveForm implements OnInit {
 
   goToHistory() {
     this.router.navigate(['/employee/view-leave']);
+    
   }
 
   logout() {

@@ -3,9 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { LeaveRequest, LeaveRequestResponse } from '../models/leave-request.model';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable()
 export class LeaveService {
   private apiUrl = 'http://localhost:3000/leave';
 

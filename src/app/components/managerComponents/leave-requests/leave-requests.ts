@@ -1,6 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LeaveService } from '../../../services/leave.service';
 import { UserService } from '../../../services/user.service';
@@ -13,9 +11,8 @@ declare var window: any;
 
 @Component({
   selector: 'app-leave-requests',
-  imports: [CommonModule, FormsModule],
   templateUrl: './leave-requests.html',
-  styleUrl: './leave-requests.css',
+  styleUrls: ['./leave-requests.css'],
 })
 export class LeaveRequests implements OnInit {
   leaveRequests: any[] = [];
@@ -59,12 +56,8 @@ export class LeaveRequests implements OnInit {
   }
 
   getEmployeeById(userId: string): any {
-    if (!userId || !this.employees || this.employees.length === 0) return null;
-    return this.employees.find(emp => {
-      const empId = emp._id ? String(emp._id) : '';
-      const reqUserId = String(userId);
-      return empId === reqUserId;
-    });
+    if (!userId || !this.employees?.length) return null;
+    return this.employees.find(emp => String(emp._id) === String(userId)) || null;
   }
 
   loadLeaveRequests() {
@@ -122,32 +115,27 @@ export class LeaveRequests implements OnInit {
   }
 
   getUserName(userId: any): string {
-    // Check if userId is populated (object with userName) or just an ID
     if (userId && typeof userId === 'object' && userId.userName) {
       return userId.userName;
     }
-    // Fallback to employee lookup if not populated
-    if (!userId || !this.employees || this.employees.length === 0) return '';
+    if (!userId || !this.employees?.length) return '';
     const user = this.employees.find(emp => String(emp._id) === String(userId));
-    return user ? user.userName : '';
+    return user?.userName || '';
   }
 
   showMore(leave: any) {
     this.selectedLeaveDetails = leave;
     this.imageError = false;
-    // Check if userId is populated (object) or just an ID
+    
     if (leave.userId && typeof leave.userId === 'object' && leave.userId.userName) {
-      // Use populated user data directly
       this.selectedEmployee = leave.userId;
     } else {
-      // Fallback to employee lookup
       this.selectedEmployee = this.getEmployeeById(leave.userId);
     }
     
     const modalEl = document.getElementById('detailsModal');
     if (modalEl) {
-      const modal = new bootstrap.Modal(modalEl);
-      modal.show();
+      new bootstrap.Modal(modalEl).show();
     }
   }
 
@@ -168,11 +156,11 @@ export class LeaveRequests implements OnInit {
 
   updateStatus(leaveId: string, status: string) {
     this.leaveService.updateLeaveRequest(leaveId, { status }).subscribe({
-      next: (response) => {
+      next: () => {
         this.toastr.success(`Leave request ${status.toLowerCase()} successfully`);
         this.loadLeaveRequests();
       },
-      error: (error) => {
+      error: () => {
         this.toastr.error(`Failed to ${status.toLowerCase()} leave request`);
       }
     });

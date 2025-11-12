@@ -6,14 +6,8 @@
           <div class="card-body p-4">
             <h4 class="text-center mb-3 fw-bold">Create Account</h4>
             
-            <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
               {{ errorMessage }}
-              <button type="button" class="btn-close" (click)="errorMessage = ''" aria-label="Close"></button>
-            </div>
-            
-            <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
-              {{ successMessage }}
-              <button type="button" class="btn-close" (click)="successMessage = ''" aria-label="Close"></button>
             </div>
 
             <form (ngSubmit)="onSubmit()" #signupForm="ngForm">

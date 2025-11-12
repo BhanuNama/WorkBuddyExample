@@ -4,9 +4,7 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { LoginRequest, LoginResponse, RegisterRequest } from '../models/user.model';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable()
 export class AuthService {
   private apiUrl = 'http://localhost:3000';
   private currentUserSubject = new BehaviorSubject<LoginResponse | null>(null);

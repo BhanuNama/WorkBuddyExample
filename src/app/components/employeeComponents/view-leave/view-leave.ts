@@ -1,6 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LeaveService } from '../../../services/leave.service';
 import { AuthService } from '../../../services/auth.service';
@@ -11,24 +9,19 @@ declare var bootstrap: any;
 
 @Component({
   selector: 'app-view-leave',
-  imports: [CommonModule, FormsModule],
   templateUrl: './view-leave.html',
-  styleUrl: './view-leave.css',
+  styleUrls: ['./view-leave.css'],
 })
 export class ViewLeave implements OnInit {
-  leaveRequests: LeaveRequest[] = [];
   filteredRequests: LeaveRequest[] = [];
   allRequests: LeaveRequest[] = [];
   isLoading = false;
   searchValue = '';
   currentUserId = '';
-  currentUserName = '';
-  selectedLeave: LeaveRequest | null = null;
-  deleteLeaveId: string = '';
+  deleteLeaveId = '';
   sortOrder: 'asc' | 'desc' = 'desc';
   page = 1;
   pageSize = 5;
-  total = 0;
   totalPages = 0;
 
   constructor(
@@ -42,7 +35,6 @@ export class ViewLeave implements OnInit {
     const currentUser = this.authService.getCurrentUser();
     if (currentUser) {
       this.currentUserId = currentUser.id;
-      this.currentUserName = currentUser.userName;
       this.loadLeaveRequests();
     }
   }
@@ -52,12 +44,10 @@ export class ViewLeave implements OnInit {
     this.leaveService.getLeaveRequestsByUserId(this.currentUserId).subscribe({
       next: (data) => {
         this.allRequests = data;
-        this.total = data.length;
-        this.totalPages = Math.ceil(this.total / this.pageSize);
         this.applyFiltersAndPagination();
         this.isLoading = false;
       },
-      error: (error) => {
+      error: () => {
         this.isLoading = false;
         this.toastr.error('Failed to load leave requests');
       }
@@ -67,26 +57,20 @@ export class ViewLeave implements OnInit {
   applyFiltersAndPagination() {
     let filtered = [...this.allRequests];
 
-    // Apply search
     if (this.searchValue.trim()) {
-      filtered = filtered.filter(leave =>
-        leave.reason.toLowerCase().includes(this.searchValue.toLowerCase())
-      );
+      const search = this.searchValue.toLowerCase();
+      filtered = filtered.filter(leave => leave.reason.toLowerCase().includes(search));
     }
 
-    // Apply sort
     filtered.sort((a, b) => {
       const dateA = new Date(a.createdOn).getTime();
       const dateB = new Date(b.createdOn).getTime();
       return this.sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
     });
 
-    // Apply pagination
     const start = (this.page - 1) * this.pageSize;
-    const end = start + this.pageSize;
-    this.filteredRequests = filtered.slice(start, end);
-    this.total = filtered.length;
-    this.totalPages = Math.ceil(this.total / this.pageSize);
+    this.filteredRequests = filtered.slice(start, start + this.pageSize);
+    this.totalPages = Math.ceil(filtered.length / this.pageSize);
   }
 
   onSearch() {
@@ -148,33 +132,22 @@ export class ViewLeave implements OnInit {
     if (!this.deleteLeaveId) return;
 
     this.leaveService.deleteLeaveRequest(this.deleteLeaveId).subscribe({
-      next: (response) => {
+      next: () => {
         this.toastr.success('Leave request deleted successfully');
         this.loadLeaveRequests();
         this.closeDeleteModal();
       },
-      error: (error) => {
+      error: () => {
         this.toastr.error('Failed to delete leave request');
       }
     });
-  }
-
-  getUserName(): string {
-    return this.currentUserName;
   }
 
   closeDeleteModal() {
     const modalEl = document.getElementById('deleteModal');
     if (modalEl) {
       const modal = bootstrap.Modal.getInstance(modalEl);
-      if (modal) {
-        // Remove focus from any focused element before hiding
-        const focusedElement = document.activeElement as HTMLElement;
-        if (focusedElement && modalEl.contains(focusedElement)) {
-          focusedElement.blur();
-        }
-        modal.hide();
-      }
+      if (modal) modal.hide();
     }
     this.deleteLeaveId = '';
   }

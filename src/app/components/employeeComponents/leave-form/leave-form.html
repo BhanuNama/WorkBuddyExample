@@ -39,25 +39,30 @@
               </mat-form-field>
 
               <!-- Reason -->
-              <mat-form-field appearance="outline" class="w-100 mb-3">
-                <mat-label>Reason</mat-label>
-                <textarea matInput formControlName="reason" rows="3" placeholder="Enter reason for leave"></textarea>
-                <mat-error *ngIf="leaveForm.get('reason')?.hasError('required')">
+              <div class="mb-3">
+                <label for="reason" class="form-label fw-semibold">Reason <span class="text-danger">*</span></label>
+                <textarea 
+                  class="form-control" 
+                  id="reason"
+                  formControlName="reason" 
+                  rows="3" 
+                  placeholder="Enter reason for leave"></textarea>
+                <div class="text-danger small mt-1" *ngIf="leaveForm.get('reason')?.hasError('required') && leaveForm.get('reason')?.touched">
                   Reason is required
-                </mat-error>
-              </mat-form-field>
+                </div>
+              </div>
 
               <!-- Leave Type -->
-              <mat-form-field appearance="outline" class="w-100 mb-3">
-                <mat-label>Leave Type</mat-label>
-                <mat-select formControlName="leaveType">
-                  <mat-option value="">Select Type</mat-option>
-                  <mat-option *ngFor="let type of leaveTypes" [value]="type">{{type}}</mat-option>
-                </mat-select>
-                <mat-error *ngIf="leaveForm.get('leaveType')?.hasError('required')">
+              <div class="mb-3">
+                <label for="leaveType" class="form-label fw-semibold">Leave Type <span class="text-danger">*</span></label>
+                <select class="form-select" id="leaveType" formControlName="leaveType">
+                  <option value="">Select Type</option>
+                  <option *ngFor="let type of leaveTypes" [value]="type">{{type}}</option>
+                </select>
+                <div class="text-danger small mt-1" *ngIf="leaveForm.get('leaveType')?.hasError('required') && leaveForm.get('leaveType')?.touched">
                   Leave Type is required
-                </mat-error>
-              </mat-form-field>
+                </div>
+              </div>
 
               <!-- Attachment -->
               <div class="mb-3">
@@ -68,9 +73,9 @@
                   id="fileInput"
                   (change)="onFileSelected($event)"
                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-                <mat-error *ngIf="leaveForm.get('file')?.hasError('required') && leaveForm.get('file')?.touched">
+                <div class="text-danger small mt-1" *ngIf="leaveForm.get('file')?.hasError('required') && leaveForm.get('file')?.touched">
                   File is required
-                </mat-error>
+                </div>
                 <!-- Image Preview -->
                 <div class="mt-2" *ngIf="leaveForm.get('file')?.value && (isImageFile(selectedFile) || isImagePreview)">
                   <small class="text-muted d-block mb-2">
@@ -96,11 +101,9 @@
               <!-- Submit Button -->
               <div class="d-grid mt-3">
                 <button 
-                  mat-raised-button 
-                  color="primary"
                   type="submit" 
                   [disabled]="isLoading"
-                  class="w-100">
+                  class="btn btn-primary w-100">
                   <span *ngIf="!isLoading">{{editMode ? 'Update Request' : 'Add Request'}}</span>
                   <span *ngIf="isLoading">
                     <span class="spinner-border spinner-border-sm me-2" role="status"></span>
