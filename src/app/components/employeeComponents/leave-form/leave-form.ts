@@ -1,16 +1,19 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { OnInit ,Component} from '@angular/core';
+import { AuthService } from 'src/app/services/auth.service';
+import { LeaveService } from 'src/app/services/leave.service';
 import { Router } from '@angular/router';
-import { LeaveService } from '../../../services/leave.service';
-import { AuthService } from '../../../services/auth.service';
+import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
+import { take } from 'rxjs/operators';
+
+
 
 @Component({
   selector: 'app-leave-form',
   templateUrl: './leave-form.html',
-  styleUrls: ['./leave-form.css'],
+  styleUrls: ['./leave-form.css']
 })
-export class LeaveForm implements OnInit {
+export class LeaveFormComponent implements OnInit {
   leaveForm!: FormGroup;
 
   selectedFile: File | null = null;
@@ -24,14 +27,15 @@ export class LeaveForm implements OnInit {
   leaveTypes = ['Sick Leave', 'Casual Leave', 'Earned Leave', 'Maternity Leave', 'Paternity Leave', 'Other'];
 
   constructor(
-    private leaveService: LeaveService,
-    private authService: AuthService,
-    private router: Router,
-    private fb: FormBuilder,
-    private toastr: ToastrService
+    private readonly leaveService: LeaveService,
+    private readonly authService: AuthService,
+    private readonly router: Router,
+    private readonly fb: FormBuilder,
+    private readonly toastr: ToastrService
   ) {
     this.leaveForm = this.fb.group({
-      userId: [''],
+
+      userId: ['', Validators.required],
       startDate: [null, Validators.required],
       endDate: [null, Validators.required],
       reason: ['', Validators.required],
@@ -41,11 +45,6 @@ export class LeaveForm implements OnInit {
   }
 
   ngOnInit() {
-    const currentUser = this.authService.getCurrentUser();
-    if (currentUser) {
-      this.leaveForm.patchValue({ userId: currentUser.id });
-    }
-
     const navigation = window.history.state;
     if (navigation && navigation.leaveData) {
       const leaveData = navigation.leaveData;
@@ -53,21 +52,19 @@ export class LeaveForm implements OnInit {
       this.leaveId = leaveData._id;
 
       this.leaveForm.patchValue({
-        userId: leaveData.userId,
         startDate: leaveData.startDate ? new Date(leaveData.startDate) : null,
         endDate: leaveData.endDate ? new Date(leaveData.endDate) : null,
         reason: leaveData.reason,
         leaveType: leaveData.leaveType,
         file: leaveData.file
       });
-      
+
       if (leaveData.file) {
         this.selectedFileName = 'File attached';
         this.isImagePreview = leaveData.file.startsWith('data:image');
       }
     }
 
-    // Reset end date when start date changes
     this.leaveForm.get('startDate')?.valueChanges.subscribe(() => {
       const endDate = this.leaveForm.get('endDate')?.value;
       const startDate = this.leaveForm.get('startDate')?.value;
@@ -77,15 +74,13 @@ export class LeaveForm implements OnInit {
     });
   }
 
-  // Simple date filter for start date - only allow today or future dates
+
   startDateFilter = (date: Date | null): boolean => {
     if (!date) return false;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return date >= today;
   };
-
-  // Simple date filter for end date - must be after start date
   endDateFilter = (date: Date | null): boolean => {
     if (!date) return false;
     const startDate = this.leaveForm.get('startDate')?.value;
@@ -96,7 +91,6 @@ export class LeaveForm implements OnInit {
     minDate.setHours(0, 0, 0, 0);
     return date >= minDate;
   };
-
   onFileSelected(event: any) {
     const file = event.target.files[0];
     if (file) {
@@ -110,15 +104,16 @@ export class LeaveForm implements OnInit {
       reader.readAsDataURL(file);
     }
   }
-
   isImageFile(file: File | null): boolean {
     if (!file) return false;
     const imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     return imageTypes.includes(file.type);
   }
 
+
   validateForm(): boolean {
     if (this.leaveForm.invalid) {
+      // This will now catch the missing userId
       this.leaveForm.markAllAsTouched();
       return false;
     }
@@ -137,14 +132,19 @@ export class LeaveForm implements OnInit {
   }
 
   onSubmit() {
+    this.leaveForm.patchValue({userId:localStorage.getItem('id')});
+
     if (!this.validateForm()) {
+
+      if (this.leaveForm.get('userId')?.invalid) {
+        this.toastr.error('User ID is missing. Please wait a moment and try again.', 'Error');
+      }
       return;
     }
 
     this.isLoading = true;
     const formValue = this.leaveForm.value;
-    
-    // Convert Date objects to ISO string (Material datepicker returns Date objects)
+
     const formatDate = (date: Date | string | null): string => {
       if (!date) return '';
       const dateObj = date instanceof Date ? date : new Date(date);
@@ -152,7 +152,7 @@ export class LeaveForm implements OnInit {
       dateObj.setHours(0, 0, 0, 0);
       return dateObj.toISOString();
     };
-    
+
     const requestData = {
       ...formValue,
       startDate: formatDate(formValue.startDate),
@@ -160,60 +160,55 @@ export class LeaveForm implements OnInit {
     };
 
     if (this.editMode && this.leaveId) {
+      console.log(this.leaveForm.value);
       this.leaveService.updateLeaveRequest(this.leaveId, requestData).subscribe({
         next: (response) => {
           this.isLoading = false;
           this.toastr.success('Leave request updated successfully!');
-          setTimeout(() => {
+          // setTimeout(() => {
             this.router.navigate(['/employee/view-leave']);
-          }, 1500);
+          // },0);
         },
         error: (error) => {
           this.isLoading = false;
-          this.toastr.error(error.error?.message || 'Failed to update leave request');
+          this.toastr.error(error.error?.message ?? 'Failed to update leave request');
         }
       });
     } else {
       this.leaveService.addLeaveRequest(requestData).subscribe({
-        next: (response) => {
+        next: () => {
           this.isLoading = false;
           this.toastr.success('Leave request submitted successfully!');
-          setTimeout(() => {
+          // setTimeout(() => {
             this.router.navigate(['/employee/view-leave']);
-          }, 1500);
+          // }, 1500);
         },
         error: (error) => {
           this.isLoading = false;
-          this.toastr.error(error.error?.message || 'Failed to submit leave request');
+          this.toastr.error(error.error?.message ?? 'Failed to submit leave request');
         }
       });
     }
   }
 
   resetForm() {
-    const currentUser = this.authService.getCurrentUser();
-    this.leaveForm.reset({
-      userId: currentUser?.id || '',
-      startDate: null,
-      endDate: null,
-      reason: '',
-      leaveType: '',
-      file: ''
+    this.authService.id$.pipe(take(1)).subscribe((userId: string | null) => {
+      this.leaveForm.reset({
+        userId: userId ?? '',
+        startDate: null,
+        endDate: null,
+        reason: '',
+        leaveType: '',
+        file: ''
+      });
     });
+
     this.selectedFile = null;
     this.selectedFileName = '';
     this.isImagePreview = false;
     const fileInput = document.getElementById('fileInput') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
   }
-
-  goToHistory() {
-    this.router.navigate(['/employee/view-leave']);
-    
-  }
-
-  logout() {
-    this.authService.logout();
-    this.router.navigate(['/login']);
-  }
 }
+
+export { LeaveFormComponent as LeaveForm };

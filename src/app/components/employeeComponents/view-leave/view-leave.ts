@@ -1,55 +1,65 @@
-import { Component, OnInit } from '@angular/core';
+import { OnInit,Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { LeaveService } from '../../../services/leave.service';
-import { AuthService } from '../../../services/auth.service';
 import { LeaveRequest } from '../../../models/leave-request.model';
+import { LeaveService } from 'src/app/services/leave.service';
 import { ToastrService } from 'ngx-toastr';
 
-declare var bootstrap: any;
+declare let bootstrap: any;
 
 @Component({
   selector: 'app-view-leave',
   templateUrl: './view-leave.html',
-  styleUrls: ['./view-leave.css'],
+  styleUrls: ['./view-leave.css']
 })
-export class ViewLeave implements OnInit {
+
+export class ViewLeaveComponent implements OnInit {
+  leaveRequests: LeaveRequest[] = [];
   filteredRequests: LeaveRequest[] = [];
   allRequests: LeaveRequest[] = [];
   isLoading = false;
   searchValue = '';
   currentUserId = '';
-  deleteLeaveId = '';
+  currentUserName = '';
+  selectedLeave: LeaveRequest | null = null;
+  deleteLeaveId: string = '';
   sortOrder: 'asc' | 'desc' = 'desc';
   page = 1;
   pageSize = 5;
+  total = 0;
   totalPages = 0;
 
   constructor(
-    private leaveService: LeaveService,
-    private authService: AuthService,
-    private router: Router,
-    private toastr: ToastrService
-  ) {}
+    private readonly leaveService: LeaveService,
+    private readonly router: Router,
+    private readonly toastr: ToastrService
+  ) { }
 
   ngOnInit() {
-    const currentUser = this.authService.getCurrentUser();
-    if (currentUser) {
-      this.currentUserId = currentUser.id;
+    this.currentUserId = localStorage.getItem('id') || '';
+    this.currentUserName = localStorage.getItem('userName') || '';
+
+    if (this.currentUserId) {
       this.loadLeaveRequests();
+    } else {
+      this.router.navigate(['/login']);
     }
   }
+
 
   loadLeaveRequests() {
     this.isLoading = true;
     this.leaveService.getLeaveRequestsByUserId(this.currentUserId).subscribe({
       next: (data) => {
         this.allRequests = data;
+        this.total = data.length;
+        this.totalPages = Math.ceil(this.total / this.pageSize);
         this.applyFiltersAndPagination();
         this.isLoading = false;
       },
-      error: () => {
+      error: (error) => {
         this.isLoading = false;
-        this.toastr.error('Failed to load leave requests');
+
+        this.toastr.error('Failed to Load Leave Requests ');
       }
     });
   }
@@ -57,20 +67,26 @@ export class ViewLeave implements OnInit {
   applyFiltersAndPagination() {
     let filtered = [...this.allRequests];
 
+    // Apply search
     if (this.searchValue.trim()) {
-      const search = this.searchValue.toLowerCase();
-      filtered = filtered.filter(leave => leave.reason.toLowerCase().includes(search));
+      filtered = filtered.filter(leave =>
+        leave.reason.toLowerCase().includes(this.searchValue.toLowerCase())
+      );
     }
 
+    // Apply sort
     filtered.sort((a, b) => {
       const dateA = new Date(a.createdOn).getTime();
       const dateB = new Date(b.createdOn).getTime();
       return this.sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
     });
 
+    // Apply pagination
     const start = (this.page - 1) * this.pageSize;
-    this.filteredRequests = filtered.slice(start, start + this.pageSize);
-    this.totalPages = Math.ceil(filtered.length / this.pageSize);
+    const end = start + this.pageSize;
+    this.filteredRequests = filtered.slice(start, end);
+    this.total = filtered.length;
+    this.totalPages = Math.ceil(this.total / this.pageSize);
   }
 
   onSearch() {
@@ -133,6 +149,7 @@ export class ViewLeave implements OnInit {
 
     this.leaveService.deleteLeaveRequest(this.deleteLeaveId).subscribe({
       next: () => {
+
         this.toastr.success('Leave request deleted successfully');
         this.loadLeaveRequests();
         this.closeDeleteModal();
@@ -143,11 +160,22 @@ export class ViewLeave implements OnInit {
     });
   }
 
+  getUserName(): string {
+    return this.currentUserName;
+  }
+
   closeDeleteModal() {
     const modalEl = document.getElementById('deleteModal');
     if (modalEl) {
       const modal = bootstrap.Modal.getInstance(modalEl);
-      if (modal) modal.hide();
+      if (modal) {
+        // Remove focus from any focused element before hiding
+        const focusedElement = document.activeElement as HTMLElement;
+        if (focusedElement && modalEl.contains(focusedElement)) {
+          focusedElement.blur();
+        }
+        modal.hide();
+      }
     }
     this.deleteLeaveId = '';
   }
@@ -157,7 +185,10 @@ export class ViewLeave implements OnInit {
   }
 
   logout() {
-    this.authService.logout();
+
     this.router.navigate(['/login']);
   }
+
 }
+
+export { ViewLeaveComponent as ViewLeave };

@@ -1,54 +1,48 @@
-import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { tap } from 'rxjs/operators';
-import { LoginRequest, LoginResponse, RegisterRequest } from '../models/user.model';
+import { Injectable } from '@angular/core';
+import { User, LoginRequest } from '../models/user.model';
+import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { ToastrService } from 'ngx-toastr';
 
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class AuthService {
-  private apiUrl = 'http://localhost:3000';
-  private currentUserSubject = new BehaviorSubject<LoginResponse | null>(null);
-  public currentUser$ = this.currentUserSubject.asObservable();
+  private readonly apiUrl = 'http://localhost:3000';
+  private readonly roleSubject = new BehaviorSubject<string | null>(null);
+  private readonly idSubject = new BehaviorSubject<string | null>(null);
+  role$ = this.roleSubject.asObservable();
+  id$ = this.idSubject.asObservable();
 
-  constructor(private http: HttpClient) {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      this.currentUserSubject.next(JSON.parse(storedUser));
-    }
+  constructor(private readonly http: HttpClient, private readonly toastr: ToastrService) { }
+
+  register(user: User): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/user/signup`, user);
   }
 
-  login(credentials: LoginRequest): Observable<any> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/user/login`, credentials).pipe(
-      tap(response => {
-        if (response && response.token) {
-          localStorage.setItem('currentUser', JSON.stringify(response));
-          localStorage.setItem('token', response.token);
-          this.currentUserSubject.next(response);
-        }
+  login(login: LoginRequest): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/user/login`, login).pipe(
+      tap(data => {
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('role', data.role);
+        localStorage.setItem('id', data.id);
+        localStorage.setItem('userName', data.userName);
+        this.roleSubject.next(data.role);
+        this.idSubject.next(data.id);
       })
     );
   }
 
-  register(userData: RegisterRequest): Observable<any> {
-    return this.http.post(`${this.apiUrl}/user/signup`, userData);
+  isLoggedin(): boolean {
+    return !!localStorage.getItem('authToken');
   }
 
   logout(): void {
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('token');
-    this.currentUserSubject.next(null);
+    this.toastr.success("Logged Out Successfully!");
+    localStorage.clear();
   }
 
-  getToken(): string | null {
-    return localStorage.getItem('token');
-  }
-
-  isLoggedIn(): boolean {
-    return !!this.getToken();
-  }
-
-  getCurrentUser(): LoginResponse | null {
-    return this.currentUserSubject.value;
+  isManager(): boolean {
+    return (localStorage.getItem('role') === 'Manager');
   }
 }
-

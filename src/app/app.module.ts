@@ -15,8 +15,8 @@ import { App } from './app';
 // Components
 import { LoginComponent } from './components/login/login.component';
 import { SignupComponent } from './components/signup/signup.component';
-import { LeaveForm } from './components/employeeComponents/leave-form/leave-form';
-import { ViewLeave } from './components/employeeComponents/view-leave/view-leave';
+import { LeaveFormComponent } from './components/employeeComponents/leave-form/leave-form';
+import { ViewLeaveComponent } from './components/employeeComponents/view-leave/view-leave';
 import { LeaveRequests } from './components/managerComponents/leave-requests/leave-requests';
 
 // Services
@@ -29,8 +29,8 @@ import { UserService } from './services/user.service';
     App,
     LoginComponent,
     SignupComponent,
-    LeaveForm,
-    ViewLeave,
+    LeaveFormComponent,
+    ViewLeaveComponent,
     LeaveRequests
   ],
   imports: [
